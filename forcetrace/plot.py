@@ -8,6 +8,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
+from forcetrace.io import force_label
 from forcetrace.metrics import verdict
 
 PHASE_COLORS = ["#dbe9f6", "#fde9c9", "#d7efd9", "#f3d9ea", "#e6e6e6"]
@@ -37,6 +38,8 @@ def run_plot(d, m, path, title=None, modes=None, p=None):
     _phases(ax, d, modes)
     t = d["t"]
     ax.plot(t, d["force"], color="#222", lw=1.2, label="|F|")
+    if "f_cmd" in d:
+        ax.plot(t, d["f_cmd"], color="#999", lw=1.0, ls="--", label="commanded |F|")
     ax.plot(t, d["f_axial"], color=COLORS[0], lw=1.0, label="axial")
     if "f_lateral" in d:
         ax.plot(t, d["f_lateral"], color=COLORS[1], lw=1.0, label="lateral")
@@ -52,7 +55,7 @@ def run_plot(d, m, path, title=None, modes=None, p=None):
     if m["jam_t"] is not None:
         ax.axvspan(m["jam_t"], t[-1], color="#d62728", alpha=0.10, lw=0)
         ax.text(m["jam_t"], 0.97, " jammed", transform=ax.get_xaxis_transform(), fontsize=8, va="top", color="#d62728")
-    ax.set_ylabel("force (N)")
+    ax.set_ylabel(force_label(d))
     ax.set_title(title or "contact force", loc="left", fontsize=11, pad=10)
     ax.text(1.0, 1.01, verdict(m), transform=ax.transAxes, ha="right", va="bottom", fontsize=10, fontweight="bold",
             color={"INSERTED": "#2ca02c", "JAMMED": "#d62728"}.get(verdict(m), "#555"))
@@ -80,10 +83,14 @@ def compare_plot(runs, path, title="forcetrace compare", logy=False):
     fig, axes = plt.subplots(2 if has_depth else 1, 1, figsize=(9, 6 if has_depth else 3.8), sharex=True, squeeze=False)
     for i, (lab, d, m) in enumerate(runs):
         c = COLORS[i % len(COLORS)]
-        axes[0, 0].plot(d["t"], d["force"], color=c, lw=1.2, label=f"{lab}: {verdict(m).lower()}, peak {m['peak_force_n']:.1f} N")
+        kind = d.get("_kind")
+        axes[0, 0].plot(d["t"], d["force"], color=c, lw=1.2,
+                        label=f"{lab}: {verdict(m).lower()}, peak {m['peak_force_n']:.1f} N" + (f" ({kind})" if kind else ""))
         if has_depth and "depth" in d:
             axes[1, 0].plot(d["t"], d["depth"] * 1e3, color=c, lw=1.2)
-    axes[0, 0].set_ylabel("|F| (N)" + (", log scale" if logy else ""))
+    kinds = {d.get("_kind") for _, d, _ in runs}
+    base = force_label(runs[0][1]) if len(kinds) == 1 else "force (N), kind per run in legend"
+    axes[0, 0].set_ylabel(base + (", log scale" if logy else ""))
     if logy:
         axes[0, 0].set_yscale("symlog", linthresh=1.0)
     axes[0, 0].set_title(title, loc="left", fontsize=11)

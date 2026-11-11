@@ -2,10 +2,33 @@
 
 Contact-force metrics and plots for robot manipulation runs. Point it at a CSV from a peg-in-hole (or any press, insert, or push) run and get peak force, impulse, time in contact, insertion time, jam detection, overshoot and settling time, plus an annotated plot, a top-down contact map, an animated GIF and a one-file HTML dashboard. No ROS needed: numpy and matplotlib only.
 
-![UR3 MuJoCo, 1.5 mm offset, spiral search](docs/mujoco_ur3_spiral.png)
+![Gazebo 4 mm spiral search, animated](docs/animate_gazebo_spiral.gif)
+
+## Quick start
 
 ```bash
-pip install -e .                                   # or: PYTHONPATH=. python3 -m forcetrace.cli ...
+pip install git+https://github.com/darshmenon/forcetrace.git      # Python 3.10+, installs the `forcetrace` command
+forcetrace --version
+
+git clone https://github.com/darshmenon/forcetrace.git && cd forcetrace    # the example logs live in the repo
+forcetrace analyze examples/data/gazebo_ur3_off4mm_spiral.csv
+forcetrace animate examples/data/gazebo_ur3_off4mm_spiral.csv --hole 0.28 0.14 --out run.gif
+```
+
+```
+gazebo_ur3_off4mm_spiral.csv
+  verdict                 INSERTED
+  duration                13.639 s
+  peak force              13.009 N
+  ...
+```
+
+Your own CSV needs a time column and a force column (`f_axial`, `f_lateral` or `force`); other headers can be mapped with `--cols`. Add `--json -` to any `analyze` or `compare` for strict JSON on stdout (non-finite values become `null`), and `python3 -m forcetrace` works without installing the script.
+
+## All commands
+
+```bash
+pip install -e .                                   # from a clone, for development (pip install -e ".[test]" then pytest)
 forcetrace analyze run.csv --plot run.png --json run.json
 forcetrace analyze run.csv --modes 0:descend,1:search,2:insert --plot run.png   # label task phases (needs a mode column)
 forcetrace compare a.csv b.csv c.csv --out compare.png --logy
@@ -14,6 +37,10 @@ forcetrace map run.csv --hole 0.28 0.14 --out map.png                           
 forcetrace animate run.csv --hole 0.28 0.14 --out run.gif                        # path + force vs time, with phase bands
 forcetrace dashboard a.csv b.csv c.csv --hole 0.28 0.14 --out dash.html          # metric cards + overlaid plots, no CDN
 ```
+
+Bad input exits with code 2 and a one-line message (missing file, a directory, a non-text file, missing columns). Rows containing NaN or inf are dropped with a note on stderr.
+
+![UR3 MuJoCo, 1.5 mm offset, spiral search](docs/mujoco_ur3_spiral.png)
 
 ## Visualizations
 
@@ -52,7 +79,7 @@ Input columns (case-insensitive, or map them with `--cols`): `t` (`time`), `f_ax
 
 All numbers below come from `examples/data` (UR3, K = 800 N/m, 10 mm/s descent). Regenerate with `forcetrace compare examples/data/gazebo_*.csv` and `examples/data/mujoco_*.csv`; full output is in `docs/*_metrics.json`.
 
-**MuJoCo, measured contact force** (`examples/export_mujoco_ur3.py` runs the env in `ur_force_control` and now also writes the tip `x`, `y`):
+**MuJoCo, simulated contact force** (`examples/export_mujoco_ur3.py` runs the env in `ur_force_control` and now also writes the tip `x`, `y`):
 
 | Case | Verdict | Peak force | Impulse | Contact to insertion |
 |---|---|---|---|---|

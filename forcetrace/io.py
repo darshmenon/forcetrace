@@ -15,7 +15,19 @@ ALIASES = {
     "x": ["x", "tip_x", "pos_x"],
     "y": ["y", "tip_y", "pos_y"],
     "mode": ["mode", "phase", "state"],
+    "f_meas_axial": ["f_meas_axial"],      # optional measured columns next to commanded ones
+    "f_meas_lateral": ["f_meas_lateral"],
 }
+
+KINDS = ("commanded", "measured", "simulated")
+
+
+def force_label(d, extra=""):
+    """Axis label that says what kind of force the run holds, when known."""
+    kind = d.get("_kind") if hasattr(d, "get") else None
+    base = {"commanded": "commanded force (N)", "measured": "measured force (N)",
+            "simulated": "simulated contact force (N)"}.get(kind, "force (N)")
+    return base + extra
 
 
 def parse_cols(spec):
@@ -30,11 +42,18 @@ def parse_cols(spec):
     return out
 
 
-def load(path, cols=None):
+def load(path, cols=None, kind=None):
     """Read a CSV into {'t', 'f_axial'?, 'f_lateral'?, 'force'?, 'depth'?, 'z'?, 'x'?, 'y'?, 'mode'?} float arrays.
+
+    kind says what the force is: 'commanded' (controller spring force), 'measured' (sensor) or 'simulated'
+    (contact force from a simulator); it only labels plots. If the CSV has f_meas_axial / f_meas_lateral columns they
+    are used as the force (kind 'measured') unless kind is 'commanded', and the commanded force is kept as f_cmd.
+    The kind is stored under the key '_kind'.
 
     Raises ValueError with the headers found if no time or force column can be resolved.
     """
+    if kind is not None and kind not in KINDS:
+        raise ValueError(f"force kind must be one of {', '.join(KINDS)}, not '{kind}'")
     cols = cols or {}
     try:
         with open(path, newline="") as f:
@@ -78,10 +97,23 @@ def load(path, cols=None):
     order = np.argsort(data["t"], kind="stable")
     if not np.all(order == np.arange(len(order))):
         data = {k: v[order] for k, v in data.items()}
+    if "f_meas_axial" in data and "force" not in data and kind != "commanded":
+        ca, cl = data.get("f_axial"), data.get("f_lateral", 0.0)
+        if ca is not None:
+            data["f_cmd"] = np.hypot(ca, cl)
+        data["f_axial"] = data.pop("f_meas_axial")
+        if "f_meas_lateral" in data:
+            data["f_lateral"] = data.pop("f_meas_lateral")
+        else:
+            data.pop("f_lateral", None)
+        kind = "measured"
+    data.pop("f_meas_axial", None)
+    data.pop("f_meas_lateral", None)
     if "force" not in data:
         a = data["f_axial"]
         l = data.get("f_lateral", np.zeros_like(a))
         data["force"] = np.hypot(a, l)
     if "f_axial" not in data:
         data["f_axial"] = data["force"]
+    data["_kind"] = kind
     return data

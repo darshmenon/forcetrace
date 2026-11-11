@@ -10,6 +10,8 @@ import numpy as np
 from matplotlib.animation import FuncAnimation, PillowWriter
 from matplotlib.collections import LineCollection
 from matplotlib.colors import Normalize
+
+from forcetrace.io import force_label
 from matplotlib.patches import Rectangle
 
 from forcetrace.metrics import verdict
@@ -79,7 +81,7 @@ def contact_map(d, m, path, hole=None, half=HOLE_HALF, title=None, peg_r=PEG_R):
     ax.text(1.0, 1.01, verdict(m), transform=ax.transAxes, ha="right", va="bottom", fontsize=10, fontweight="bold",
             color={"INSERTED": "#2ca02c", "JAMMED": "#d62728"}.get(verdict(m), "#555"))
     cb = fig.colorbar(sc, ax=ax, fraction=0.046, pad=0.03)
-    cb.set_label("|F| (N)" + ("" if f.max() <= norm.vmax else f", clipped at {norm.vmax:.0f}"))
+    cb.set_label(force_label(d).replace("(N)", "|F| (N)") + ("" if f.max() <= norm.vmax else f", clipped at {norm.vmax:.0f}"))
     ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.13), ncol=2, fontsize=8, frameon=False)
     fig.tight_layout()
     fig.savefig(path, dpi=140)
@@ -124,7 +126,7 @@ def animate(d, m, path, hole=None, half=HOLE_HALF, modes=None, title=None, fps=1
     axm.add_collection(trail)
     dot, = axm.plot([], [], "o", mfc="white", mec="#222", ms=9, zorder=5)
     cb = fig.colorbar(trail, ax=axm, fraction=0.046, pad=0.03)
-    cb.set_label("|F| (N)")
+    cb.set_label(force_label(d).replace("(N)", "|F| (N)"))
     axm.set_title("peg tip, top-down", loc="left", fontsize=10)
 
     _bands(axf, d, modes)
@@ -137,7 +139,7 @@ def animate(d, m, path, hole=None, half=HOLE_HALF, modes=None, title=None, fps=1
         axf.set_yscale("symlog", linthresh=1.0)
     axf.set_ylim(0, f.max() * 1.1)
     axf.set_xlabel("time (s)")
-    axf.set_ylabel("force (N)" + (", symlog" if big else ""))
+    axf.set_ylabel(force_label(d, ", symlog" if big else ""))
     axf.grid(alpha=0.25)
     k = int(np.argmax(f))
     axf.annotate(f"peak {f[k]:.1f} N", (t[k], f[k]), xytext=(-8, -22), textcoords="offset points", ha="right", fontsize=8,

@@ -77,7 +77,7 @@ button{background:none;border:1px solid var(--line);color:var(--mute);border-rad
 #tip{position:fixed;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:12px;display:none;box-shadow:0 2px 8px #0002}
 @media (max-width:760px){.panels{grid-template-columns:1fr}}
 </style></head><body><main>
-<h1>__TITLE__</h1><p class="sub">Click a card to hide or show a run. Hover a plot to read values. Force on the Gazebo logs is the commanded spring force, on the MuJoCo logs it is measured contact force.</p>
+<h1>__TITLE__</h1><p class="sub">Click a card to hide or show a run. Hover a plot to read values. Force on the Gazebo logs is the commanded spring force, on the MuJoCo logs it is simulated contact force.</p>
 <div class="cards" id="cards"></div>
 <div class="panels">
 <div class="panel wide"><h3><span>Force |F| (N)</span><button id="logbtn">log scale</button></h3><div id="pf"></div></div>

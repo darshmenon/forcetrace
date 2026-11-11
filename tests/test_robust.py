@@ -77,3 +77,36 @@ def test_friendly_file_errors(tmp_path, capsys, make, needle):
     assert main(["analyze", make(tmp_path)]) == 2
     err = capsys.readouterr().err
     assert needle in err and "Errno" not in err and "Traceback" not in err
+
+
+def _csv(tmp_path, header, rows, name="run.csv"):
+    p = tmp_path / name
+    p.write_text(",".join(header) + "\n" + "\n".join(",".join(str(v) for v in r) for r in rows) + "\n")
+    return str(p)
+
+
+def test_force_kind_labels_the_axis(tmp_path):
+    from forcetrace.io import force_label, load
+    path = _csv(tmp_path, ["t", "f_axial", "f_lateral"], [[0, 0, 0], [1, 1, 0], [2, 2, 0]])
+    assert force_label(load(path)) == "force (N)"
+    assert force_label(load(path, kind="commanded")) == "commanded force (N)"
+    assert force_label(load(path, kind="simulated"), ", log scale") == "simulated contact force (N), log scale"
+
+
+def test_bad_force_kind_is_rejected(tmp_path):
+    import pytest
+    from forcetrace.io import load
+    path = _csv(tmp_path, ["t", "f_axial"], [[0, 0], [1, 1]])
+    with pytest.raises(ValueError, match="force kind"):
+        load(path, kind="guessed")
+
+
+def test_measured_columns_win_unless_commanded_is_asked_for(tmp_path):
+    from forcetrace.io import load
+    path = _csv(tmp_path, ["t", "f_axial", "f_lateral", "f_meas_axial", "f_meas_lateral"],
+                [[0, 5, 0, 1, 0], [1, 6, 0, 2, 0], [2, 7, 0, 3, 0]])
+    d = load(path)
+    assert d["_kind"] == "measured" and list(d["f_axial"]) == [1, 2, 3] and list(d["f_cmd"]) == [5, 6, 7]
+    assert "f_meas_axial" not in d
+    c = load(path, kind="commanded")
+    assert c["_kind"] == "commanded" and list(c["f_axial"]) == [5, 6, 7] and "f_cmd" not in c

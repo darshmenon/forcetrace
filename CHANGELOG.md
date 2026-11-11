@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0
+- `pip install` works from a clean virtualenv, from a clone and from the GitHub URL; the install and the `forcetrace` command were checked in a fresh venv. Python 3.10 or newer is now declared, which is what the dependencies need.
+- `--json` is strict JSON: NaN and inf become `null`, numpy values become plain numbers, output ends in a newline, and `compare --json -` now prints to stdout like `analyze` does.
+- Rows with NaN or inf are dropped with a note on stderr, and a file with none left is an error.
+- Friendly one-line errors with exit code 2 for a missing file, a directory, an unreadable or non-text file.
+- `python3 -m forcetrace` works, and Ctrl-C exits quietly with code 130.
+- CI on GitHub Actions: Python 3.10 and 3.12, pip install, pytest and a CLI smoke test on the example logs.
+- README starts with a quick start and the animated run.
+- `--force-kind commanded|measured|simulated` labels every plot, map, animation and the compare legend with what the force is. A log with `f_meas_axial` / `f_meas_lateral` columns uses them as measured force and draws the commanded force dashed next to it.
+
 ## 0.2.0
 - `forcetrace map`: top-down contact map PNG, tip path coloured by force, hole outline and insert zone, start/end/peak markers.
 - `forcetrace animate`: GIF with the tip path coloured by force next to force vs time, a moving cursor and shaded task phases.

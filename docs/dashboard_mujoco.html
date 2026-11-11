@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>UR3 peg-in-hole, MuJoCo (measured force)</title>
+<title>UR3 peg-in-hole, MuJoCo (simulated contact force)</title>
 <style>
 :root{--bg:#f6f7f9;--panel:#fff;--ink:#1d2330;--mute:#6b7280;--line:#e3e6ec;--grid:#eceff3;--ok:#1f9d55;--bad:#d64545;--warn:#8a8f98}
 @media (prefers-color-scheme:dark){:root{--bg:#14171c;--panel:#1c2027;--ink:#e6e9ef;--mute:#98a1b0;--line:#2b313b;--grid:#262b34}}
@@ -18,7 +18,7 @@ button{background:none;border:1px solid var(--line);color:var(--mute);border-rad
 #tip{position:fixed;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:12px;display:none;box-shadow:0 2px 8px #0002}
 @media (max-width:760px){.panels{grid-template-columns:1fr}}
 </style></head><body><main>
-<h1>UR3 peg-in-hole, MuJoCo (measured force)</h1><p class="sub">Click a card to hide or show a run. Hover a plot to read values. Force on the Gazebo logs is the commanded spring force, on the MuJoCo logs it is measured contact force.</p>
+<h1>UR3 peg-in-hole, MuJoCo (simulated contact force)</h1><p class="sub">Click a card to hide or show a run. Hover a plot to read values. Force on the Gazebo logs is the commanded spring force, on the MuJoCo logs it is simulated contact force.</p>
 <div class="cards" id="cards"></div>
 <div class="panels">
 <div class="panel wide"><h3><span>Force |F| (N)</span><button id="logbtn">log scale</button></h3><div id="pf"></div></div>

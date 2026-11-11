@@ -83,6 +83,9 @@ def _modes(spec):
 
 def _common(sp):
     sp.add_argument("--cols", help="column mapping, e.g. t=time,f_axial=Fz,f_lateral=Fxy,depth=d,mode=phase,force=|F|")
+    sp.add_argument("--force-kind", choices=["commanded", "measured", "simulated"],
+                    help="what the force column is, for plot labels; a log with f_meas_axial/f_meas_lateral columns "
+                         "uses them as measured force unless this is 'commanded'")
     sp.add_argument("--contact-n", type=float, default=0.5, help="axial force (N) that counts as contact [0.5]")
     sp.add_argument("--insert-depth", type=float, default=0.027, help="depth (m) that counts as inserted [0.027]")
     sp.add_argument("--jam-time", type=float, default=3.0, help="seconds of contact without progress that is a jam [3]")
@@ -135,7 +138,7 @@ def main(argv=None):
     try:
         cols, p = parse_cols(a.cols), _params(a)
         if a.cmd == "analyze":
-            d = load(a.csv, cols)
+            d = load(a.csv, cols, a.force_kind)
             m = analyze(d, p)
             if a.json == "-":
                 sys.stdout.write(dumps(m))
@@ -148,7 +151,7 @@ def main(argv=None):
                 from forcetrace.plot import run_plot
                 run_plot(d, m, a.plot, a.title or os.path.splitext(os.path.basename(a.csv))[0], _modes(a.modes), p)
         elif a.cmd in ("map", "animate"):
-            d = load(a.csv, cols)
+            d = load(a.csv, cols, a.force_kind)
             m = analyze(d, p)
             name = a.title or os.path.splitext(os.path.basename(a.csv))[0]
             if a.cmd == "map":
@@ -162,7 +165,7 @@ def main(argv=None):
             from forcetrace.dashboard import write_dashboard
             runs = []
             for f in a.csv:
-                d = load(f, cols)
+                d = load(f, cols, a.force_kind)
                 runs.append((os.path.splitext(os.path.basename(f))[0], d, analyze(d, p)))
             write_dashboard(runs, a.out, a.hole, a.hole_half - a.peg_radius, a.title or "forcetrace dashboard")
             print(f"{a.out}: {len(runs)} runs")
@@ -171,7 +174,7 @@ def main(argv=None):
                 raise ValueError("compare needs at least two CSV files")
             runs = []
             for f in a.csv:
-                d = load(f, cols)
+                d = load(f, cols, a.force_kind)
                 runs.append((os.path.splitext(os.path.basename(f))[0], d, analyze(d, p)))
             names = [r[0] for r in runs]
             w = max(len(n) for n in names) + 2
