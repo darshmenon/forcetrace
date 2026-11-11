@@ -1,6 +1,7 @@
 """forcetrace command line."""
 import argparse
 import json
+import math
 import os
 import sys
 
@@ -28,6 +29,24 @@ ROWS = [
     ("axial overshoot", "overshoot_pct", "%"),
     ("settling time", "settling_time_s", "s"),
 ]
+
+
+def _plain(v):
+    """Metrics as plain JSON types: numpy scalars to Python, NaN and inf to null."""
+    if isinstance(v, dict):
+        return {str(k): _plain(x) for k, x in v.items()}
+    if isinstance(v, (list, tuple)):
+        return [_plain(x) for x in v]
+    if hasattr(v, "item") and not isinstance(v, (str, bytes)):
+        v = v.item()
+    if isinstance(v, float) and not math.isfinite(v):
+        return None
+    return v
+
+
+def dumps(obj):
+    """Strict JSON (never NaN or Infinity), 2-space indent, trailing newline, key order as produced."""
+    return json.dumps(_plain(obj), indent=2, allow_nan=False) + "\n"
 
 
 def _fmt(v, unit):
@@ -90,7 +109,7 @@ def main(argv=None):
     cp.add_argument("--out", metavar="PNG", help="write the overlay plot")
     cp.add_argument("--logy", action="store_true", help="symlog force axis (for runs with large spikes)")
     cp.add_argument("--title")
-    cp.add_argument("--json", metavar="PATH")
+    cp.add_argument("--json", metavar="PATH", help="write metrics as JSON ('-' for stdout)")
     def _viz(sp):
         _common(sp)
         sp.add_argument("--hole", nargs=2, type=float, metavar=("X", "Y"), help="hole centre in the log's frame (m); draws the hole outline")
@@ -119,12 +138,12 @@ def main(argv=None):
             d = load(a.csv, cols)
             m = analyze(d, p)
             if a.json == "-":
-                print(json.dumps(m, indent=2))
+                sys.stdout.write(dumps(m))
             else:
                 print(table(m, os.path.basename(a.csv)))
                 if a.json:
                     with open(a.json, "w") as f:
-                        json.dump(m, f, indent=2)
+                        f.write(dumps(m))
             if a.plot:
                 from forcetrace.plot import run_plot
                 run_plot(d, m, a.plot, a.title or os.path.splitext(os.path.basename(a.csv))[0], _modes(a.modes), p)
@@ -156,22 +175,27 @@ def main(argv=None):
                 runs.append((os.path.splitext(os.path.basename(f))[0], d, analyze(d, p)))
             names = [r[0] for r in runs]
             w = max(len(n) for n in names) + 2
-            print(f"{'':<24}" + "".join(f"{n:>{max(w, 12)}}" for n in names))
-            for label, key, unit in ROWS:
-                vals = [verdict(r[2]) if key is None else (_fmt(r[2].get(key), "").strip() if key in r[2] else "-")
-                        for r in runs]
-                if all(v == "-" for v in vals):
-                    continue
-                print(f"{label + (' (' + unit + ')' if unit else ''):<24}" + "".join(f"{v:>{max(w, 12)}}" for v in vals))
-            if a.json:
-                with open(a.json, "w") as f:
-                    json.dump({n: m for n, _, m in runs}, f, indent=2)
+            if a.json == "-":
+                sys.stdout.write(dumps({n: m for n, _, m in runs}))
+            else:
+                print(f"{'':<24}" + "".join(f"{n:>{max(w, 12)}}" for n in names))
+                for label, key, unit in ROWS:
+                    vals = [verdict(r[2]) if key is None else (_fmt(r[2].get(key), "").strip() if key in r[2] else "-")
+                            for r in runs]
+                    if all(v == "-" for v in vals):
+                        continue
+                    print(f"{label + (' (' + unit + ')' if unit else ''):<24}" + "".join(f"{v:>{max(w, 12)}}" for v in vals))
+                if a.json:
+                    with open(a.json, "w") as f:
+                        f.write(dumps({n: m for n, _, m in runs}))
             if a.out:
                 from forcetrace.plot import compare_plot
                 compare_plot(runs, a.out, a.title or "forcetrace compare", a.logy)
     except (ValueError, OSError) as e:
         print(f"forcetrace: {e}", file=sys.stderr)
         return 2
+    except KeyboardInterrupt:
+        return 130
     return 0
 
 

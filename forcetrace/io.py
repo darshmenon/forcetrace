@@ -1,5 +1,6 @@
 """CSV loading with flexible column mapping."""
 import csv
+import sys
 
 import numpy as np
 
@@ -35,8 +36,17 @@ def load(path, cols=None):
     Raises ValueError with the headers found if no time or force column can be resolved.
     """
     cols = cols or {}
-    with open(path, newline="") as f:
-        rows = list(csv.reader(f))
+    try:
+        with open(path, newline="") as f:
+            rows = list(csv.reader(f))
+    except FileNotFoundError:
+        raise ValueError(f"{path}: file not found") from None
+    except IsADirectoryError:
+        raise ValueError(f"{path}: is a directory, expected a CSV file") from None
+    except PermissionError:
+        raise ValueError(f"{path}: permission denied") from None
+    except (UnicodeDecodeError, csv.Error):
+        raise ValueError(f"{path}: not a text CSV file") from None
     if len(rows) < 2:
         raise ValueError(f"{path}: no data rows")
     header = [h.strip() for h in rows[0]]
@@ -57,6 +67,14 @@ def load(path, cols=None):
         raise ValueError(f"{path}: no time column found; headers: {header} (use --cols t=<header>)")
     if not any(k in data for k in ("f_axial", "force")):
         raise ValueError(f"{path}: no force column found; headers: {header} (use --cols f_axial=<header> or force=<header>)")
+    good = np.ones(len(data["t"]), dtype=bool)
+    for v in data.values():
+        good &= np.isfinite(v)
+    if not good.all():
+        print(f"forcetrace: {path}: dropped {int((~good).sum())} row(s) with NaN or inf", file=sys.stderr)
+        data = {k: v[good] for k, v in data.items()}
+        if len(data["t"]) < 1:
+            raise ValueError(f"{path}: no finite data rows")
     order = np.argsort(data["t"], kind="stable")
     if not np.all(order == np.arange(len(order))):
         data = {k: v[order] for k, v in data.items()}
