@@ -1,0 +1,33 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install ".[test]"
+      - name: Tests
+        run: pytest -q
+      - name: CLI smoke test on the example logs
+        run: |
+          forcetrace --version
+          forcetrace analyze examples/data/gazebo_ur3_off4mm_spiral.csv --json - | python -c "import json,sys; d=json.load(sys.stdin); assert d['inserted'] is True, d"
+          forcetrace analyze examples/data/gazebo_ur3_off4mm_plain.csv | grep -q JAMMED
+          forcetrace compare examples/data/gazebo_ur3_off4mm_spiral.csv examples/data/gazebo_ur3_off4mm_plain.csv --out /tmp/compare.png
+          forcetrace map examples/data/gazebo_ur3_off4mm_spiral.csv --hole 0.28 0.14 --out /tmp/map.png
+          python -m forcetrace --version
