@@ -1,5 +1,7 @@
 # forcetrace
 
+[![CI](https://github.com/darshmenon/forcetrace/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/darshmenon/forcetrace/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/darshmenon/forcetrace)](https://github.com/darshmenon/forcetrace/releases) [![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE) ![python](https://img.shields.io/badge/python-3.10%2B-blue)
+
 Contact-force metrics and plots for robot manipulation runs. Point it at a CSV from a peg-in-hole (or any press, insert, or push) run and get peak force, impulse, time in contact, insertion time, jam detection, overshoot and settling time, plus an annotated plot, a top-down contact map, an animated GIF and a one-file HTML dashboard. No ROS needed: numpy and matplotlib only.
 
 ![Gazebo 4 mm spiral search, animated](docs/animate_gazebo_spiral.gif)
