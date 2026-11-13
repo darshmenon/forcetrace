@@ -60,7 +60,7 @@ The Gazebo map shows something the force plot does not: the peg ended about 1.7 
 
 ![MuJoCo contact map](docs/map_mujoco_spiral.png)
 
-**Dashboard** (`forcetrace dashboard`): one HTML file with a card per run (verdict and key metrics), overlaid force, depth and top-down plots, hover read-outs, click a card to hide a run, and a log-scale toggle (on by default when one spike dominates). Data is embedded and drawn as inline SVG, so it works offline and makes no network requests. Open [docs/dashboard_mujoco.html](docs/dashboard_mujoco.html) or [docs/dashboard_gazebo.html](docs/dashboard_gazebo.html) in a browser (GitHub shows the source, so download them first).
+**Dashboard** (`forcetrace dashboard`; live examples: [Gazebo](https://darshmenon.github.io/forcetrace/dashboard_gazebo.html), [MuJoCo](https://darshmenon.github.io/forcetrace/dashboard_mujoco.html)): one HTML file with a card per run (verdict and key metrics), overlaid force, depth and top-down plots, hover read-outs, click a card to hide a run, and a log-scale toggle (on by default when one spike dominates). Data is embedded and drawn as inline SVG, so it works offline and makes no network requests. Open [docs/dashboard_mujoco.html](docs/dashboard_mujoco.html) or [docs/dashboard_gazebo.html](docs/dashboard_gazebo.html) in a browser (GitHub shows the source, so download them first).
 
 ## What it reports
 
